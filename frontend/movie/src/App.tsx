@@ -1,14 +1,18 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MovieCard from './components/MovieCard';
 import { MoviesByGenre } from './components/MoviesByGenre';
+import { NavBar } from './components/NavBar';
 import { NotificationPanel } from './components/NotificationPanel';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { type Movie } from './types';
 import { api_v1 } from './services/api';
 import { ManageMoviesPage } from './pages/ManageMoviesPage';
 import { EditMoviePage } from './pages/EditMoviePage';
+import { LoginPage } from './pages/LoginPage';
 
 
 const MovieList = () => {
@@ -66,19 +70,18 @@ const MovieList = () => {
   }
 
   return (
-    <div className="bg-gray-900 min-h-screen w-full py-8">
-      <div className="container mx-auto px-4">
-        <div className="mb-12 flex justify-between items-center">
-          <h1 className="text-5xl font-bold text-red-600">
-            MovieMatch
-          </h1>
-          <button
-            onClick={() => navigate('/manage')}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors font-semibold"
-          >
-            + Adicionar Filmes
-          </button>
-        </div>
+    <>
+      <NavBar />
+      <div className="bg-gray-900 min-h-screen w-full py-8">
+        <div className="container mx-auto px-4">
+          <div className="mb-12 flex justify-end">
+            <button
+              onClick={() => navigate('/manage')}
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors font-semibold"
+            >
+              + Adicionar Filmes
+            </button>
+          </div>
         
         {/* Seção de Filmes Ativos por Gênero */}
         <div className="mb-16">
@@ -106,8 +109,9 @@ const MovieList = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
@@ -115,16 +119,46 @@ const MovieList = () => {
 
 const App = () => {
   return (
-    <NotificationProvider>
-      <BrowserRouter>
-        <NotificationPanel />
-        <Routes>
-          <Route path="/" element={<MovieList />} />
-          <Route path="/manage" element={<ManageMoviesPage />} />
-          <Route path="/movies/:id/edit" element={<EditMoviePage />} />
-        </Routes>
-      </BrowserRouter>
-    </NotificationProvider>
+    <AuthProvider>
+      <NotificationProvider>
+        <BrowserRouter>
+          <NotificationPanel />
+          <Routes>
+            {/* Rota pública - Login */}
+            <Route path="/login" element={<LoginPage />} />
+
+            {/* Rotas protegidas */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <MovieList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/manage"
+              element={
+                <ProtectedRoute>
+                  <ManageMoviesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/movies/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditMoviePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Rota padrão - redireciona para home ou login */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </NotificationProvider>
+    </AuthProvider>
   );
 };
 
